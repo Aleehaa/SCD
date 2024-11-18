@@ -1,0 +1,207 @@
+import java.util.*;
+
+// Book Class
+class Book {
+    private String title;
+    private String author;
+    private double price;
+
+    public Book(String title, String author, double price) {
+        this.title = title;
+        this.author = author;
+        this.price = price;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s by %s - $%.2f", title, author, price);
+    }
+}
+
+// OrderItem Class
+class OrderItem {
+    private Book book;
+    private int quantity;
+
+    public OrderItem(Book book, int quantity) {
+        this.book = book;
+        this.quantity = quantity;
+    }
+
+    public Book getBook() {
+        return book;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public double getItemTotal() {
+        return book.getPrice() * quantity;
+    }
+}
+
+// Order Class
+class Order {
+    private List<OrderItem> items;
+
+    public Order() {
+        this.items = new ArrayList<>();
+    }
+
+    public void addOrderItem(OrderItem item) {
+        items.add(item);
+    }
+
+    public List<OrderItem> getItems() {
+        return items;
+    }
+
+    public double calculateTotal() {
+        return items.stream().mapToDouble(OrderItem::getItemTotal).sum();
+    }
+
+    public void displayOrderSummary() {
+        System.out.println("\nOrder Summary:");
+        for (OrderItem item : items) {
+            System.out.printf("%s - Quantity: %d - Subtotal: $%.2f\n",
+                item.getBook().getTitle(), item.getQuantity(), item.getItemTotal());
+        }
+        System.out.printf("Total Amount: $%.2f\n", calculateTotal());
+    }
+}
+
+// BookManager Class
+class BookManager {
+    private Map<Integer, Book> bookCatalog = new HashMap<>();
+    private int nextId = 1;
+
+    public int addBook(String title, String author, double price) {
+        Book book = new Book(title, author, price);
+        bookCatalog.put(nextId, book);
+        return nextId++;
+    }
+
+    public Book getBook(int id) {
+        return bookCatalog.get(id);
+    }
+
+    public void displayCatalog() {
+        System.out.println("\nBook Catalog:");
+        if (bookCatalog.isEmpty()) {
+            System.out.println("No books available.");
+        } else {
+            for (Map.Entry<Integer, Book> entry : bookCatalog.entrySet()) {
+                System.out.printf("%d: %s\n", entry.getKey(), entry.getValue());
+            }
+        }
+    }
+}
+
+// Controller Class
+class Controller {
+    private BookManager bookManager = new BookManager();
+
+    public void start() {
+        Scanner scanner = new Scanner(System.in);
+        Order order = new Order();
+
+        // Pre-populate book catalog
+        bookManager.addBook("Book A", "Author A", 10.99);
+        bookManager.addBook("Book B", "Author B", 12.99);
+        bookManager.addBook("Book C", "Author C", 8.99);
+
+        System.out.println("Welcome to the Bookshop!");
+
+        boolean isRunning = true;
+        while (isRunning) {
+            System.out.println("\nMain Menu:");
+            System.out.println("1. Purchase Books");
+            System.out.println("2. Add a New Book to the Catalog");
+            System.out.println("3. View Book Catalog");
+            System.out.println("0. Exit");
+            System.out.print("Enter your choice: ");
+            int choice = scanner.nextInt();
+
+            switch (choice) {
+                case 1:
+                    handlePurchase(scanner, order);
+                    break;
+                case 2:
+                    handleBookCreation(scanner);
+                    break;
+                case 3:
+                    bookManager.displayCatalog();
+                    break;
+                case 0:
+                    isRunning = false;
+                    System.out.println("Exiting the Bookshop. Goodbye!");
+                    break;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
+        }
+
+        scanner.close();
+    }
+
+    private void handlePurchase(Scanner scanner, Order order) {
+        boolean isOrdering = true;
+        while (isOrdering) {
+            bookManager.displayCatalog();
+            System.out.print("Enter the book ID to purchase or 0 to finish: ");
+            int bookId = scanner.nextInt();
+
+            if (bookId == 0) {
+                isOrdering = false;
+                continue;
+            }
+
+            Book selectedBook = bookManager.getBook(bookId);
+            if (selectedBook == null) {
+                System.out.println("Invalid book ID. Please try again.");
+                continue;
+            }
+
+            System.out.print("Enter quantity: ");
+            int quantity = scanner.nextInt();
+            order.addOrderItem(new OrderItem(selectedBook, quantity));
+        }
+
+        order.displayOrderSummary();
+    }
+
+    private void handleBookCreation(Scanner scanner) {
+        System.out.println("\nAdd a New Book:");
+        System.out.print("Enter title: ");
+        scanner.nextLine(); // Clear newline
+        String title = scanner.nextLine();
+        System.out.print("Enter author: ");
+        String author = scanner.nextLine();
+        System.out.print("Enter price: ");
+        double price = scanner.nextDouble();
+
+        int newBookId = bookManager.addBook(title, author, price);
+        System.out.printf("Book '%s' added to the catalog with ID %d.\n", title, newBookId);
+    }
+}
+
+// Main Class
+class Main {
+    public static void main(String[] args) {
+        Controller controller = new Controller();
+        controller.start();
+    }
+}
